@@ -1,0 +1,4 @@
+Create user interface for User Logon screen
+
+Create contacts linker table.
+Create messages data structure.
