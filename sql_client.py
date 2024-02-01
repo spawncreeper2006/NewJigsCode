@@ -15,7 +15,11 @@ class SQLClient(ABC):
         ...
 
     @abstractmethod
-    def query(self, search_data: Any) -> Any:
+    def query(self, field_name: str, field_value: Any) -> Any:
+        ...
+
+    @abstractmethod
+    def insert_into(self, insert_data: Any) -> None:
         ...
 
 
@@ -27,13 +31,17 @@ class LoginQueryResponse:
     user_type: Literal['Admin', 'User'] | None = None
     position: str | None = None
 
+    @property
+    def is_valid(self) -> bool:
+        return self.user_id != None
+
 
 class LoginClient(SQLClient):
 
     def __init__(self, filename: str) -> None:
-        self.filename = filename
-        self.connection = None
-        self.cursor = None
+        self.filename: str = filename
+        self.connection: sqlite3.Connection | None = None
+        self.cursor: sqlite3.Cursor | None = None
 
     @property
     def connected(self) -> bool:
@@ -44,15 +52,22 @@ class LoginClient(SQLClient):
         self.cursor = self.connection.cursor()
 
     def disconnect(self) -> None:
-        self.connection.close()
+        if type(self.connection) == sqlite3.Connection:
+            self.connection.close()
+            
+        else:
+            print ('disconnect was called on closed connection')
+        
         self.connection = None
         self.cursor = None
 
-    def query(self, username: str) -> LoginQueryResponse:
-        if not self.connected:
-            raise Exception('cannot query a database with no connection')
+    def query(self, field_name: str, field_value: str) -> LoginQueryResponse:
+
+        if self.cursor == None:
+            raise Exception('Cannot query database with no active connection')
+            
         
-        self.cursor.execute("SELECT * FROM contacts WHERE username=?", (username,))
+        self.cursor.execute(f"SELECT * FROM contacts WHERE {field_name}=?", (field_value,))
 
         results = self.cursor.fetchall()
 
@@ -65,12 +80,38 @@ class LoginClient(SQLClient):
             return LoginQueryResponse()
 
         return LoginQueryResponse(*result)
+    
+    def insert_into(self, insert_data: LoginQueryResponse) -> None:
+        
+        if self.connection == None or self.cursor == None:
+            raise Exception('Cannot insert into database with no active connection')
+        
+
+        
+        self.cursor.execute(
+            '''INSERT INTO contacts(UserID, Username, Password, UserType, Position)
+            VALUES(?,?,?,?,?) ''',
+            (insert_data.user_id, insert_data.username, insert_data.password, insert_data.user_type, insert_data.position)
+        )
+
+        self.connection.commit()
+
+        
+
+
 
 
 
 if __name__ == '__main__':
     lc = LoginClient('contact.db')
     lc.connect()
-    lqr = lc.query('yarr')
-
-    print (lqr)
+    
+    lc.insert_into(LoginQueryResponse(
+        5,
+        'test1',
+        'test1',
+        'User',
+        'Car'
+    ))
+    
+    lc.disconnect()
