@@ -160,14 +160,13 @@ def main():
     '''testing main function'''
     db = UsersDatabase('users.db')
     db.connect()
+
     ct = ContactsTable(db)
     ut = UsersTable(db)
 
-    print (ct.find_friends(
-        1,
-        ut
-    ))
+    user = ut.query('UserID', 1)
 
+    print (user.username)
 
 
 
