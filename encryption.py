@@ -30,7 +30,7 @@ class TreeEncrypt(EncryptionType):
     def encrypt(data: str) -> str:
         return TreeEncrypt.__encrypt_or_decrypt(data)
 
-    @staticmethod    
+    @staticmethod   
     def decrypt(data: str) -> str:
         return TreeEncrypt.__encrypt_or_decrypt(data)
 
